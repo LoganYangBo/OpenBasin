@@ -30,6 +30,7 @@ android/local.properties
 # IDE / OS
 .idea/
 .vscode/
+*.iml
 .DS_Store
 
 # Local agent/session state

@@ -20,6 +20,7 @@ from Android Studio.)
 | `agent/SmsReceiver.kt` | `BroadcastReceiver` on `SMS_RECEIVED` (READ_SMS) |
 | `agent/NotificationCollector.kt` | `NotificationListenerService` for app notifications |
 | `agent/EmailPoller.kt` | WorkManager job polling IMAP for unseen mail |
+| `agent/EmailAccount.kt` | One or more IMAP mailboxes, persisted as JSON |
 | `transport/EncryptedUploader.kt` | AES-256-GCM envelope + `X-Device-Token` upload |
 | `transport/SignalPayload.kt` | On-device signal model + dedup `content_hash` |
 
@@ -32,9 +33,11 @@ from Android Studio.)
 3. Tap **Save & enable capture** (grants SMS permission, schedules email polling).
 4. Tap **Grant notification access** and enable OpenBasin in the system page.
 
-For email, fill the **Email (IMAP)** fields on the same screen (host, user,
-password). They are saved to the `openbasin_email` SharedPreferences and read by
-`EmailPoller`, which polls every ~15 min for unseen mail.
+For email, fill the **Email (IMAP)** fields on the same screen (host, port,
+user, password) and tap **Add mailbox** — repeat to add **as many mailboxes as
+you want**. Each appears in the list above the fields; **Clear** removes them
+all. Accounts are stored as JSON in the `openbasin_email` SharedPreferences and
+read by `EmailPoller`, which polls every mailbox every ~15 min for unseen mail.
 
 ## End-to-end test on an emulator (no physical phone)
 
@@ -101,12 +104,17 @@ curl http://localhost:8080/v1/events/recent -H "X-Device-Token: <your token>"
 To test **notifications**, trigger any app notification on the emulator (after
 granting notification access via the app's button).
 
-To test **email**, fill the Email (IMAP) fields in the app (e.g. for Gmail:
-host `imap.gmail.com`, your address, and an **app password**), then send an email
-to that inbox. `EmailPoller` runs every ~15 min; to fire it immediately for a
-test, force-stop and reopen the app, or trigger the WorkManager job from Android
-Studio's **App Inspection → Background Task Inspector**. A poll uploads each
-unseen message and marks it seen.
+To test **email**, add a mailbox in the app (e.g. for Gmail: host
+`imap.gmail.com`, port `993`, your address, and an **app password**) via **Add
+mailbox**, then send an email to that inbox. `EmailPoller` runs every ~15 min;
+to fire it immediately for a test, force-stop and reopen the app, or trigger the
+WorkManager job from Android Studio's **App Inspection → Background Task
+Inspector**. A poll uploads each unseen message and marks it seen.
+
+The offline dev pipelines (`pipelines/dev/`) include `archive-notification.yaml`
+and `archive-email.yaml`, so notifications and email get archived to
+`data/archive/` **without calling an LLM** — ideal for verifying capture before
+wiring up extraction.
 
 To test the **LLM extraction + real actions** path, point the server's
 `pipelines_dir` back at `pipelines` and configure an LLM — see `scripts/README.md`.

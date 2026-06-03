@@ -1,0 +1,12 @@
+name: dev_archive_email
+
+# Offline smoke-test pipeline: no `extract.schema`, so the LLM is never called.
+# Archives every captured email to a local file. Use it to verify the
+# IMAP poll -> upload -> server chain end to end.
+
+trigger:
+  signal_type: email
+
+actions:
+  - type: file
+    path: ./data/archive/emails.jsonl

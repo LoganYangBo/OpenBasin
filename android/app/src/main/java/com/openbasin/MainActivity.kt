@@ -1,13 +1,13 @@
 package com.openbasin
 
 import android.Manifest
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -16,6 +16,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.openbasin.agent.EmailAccount
 import com.openbasin.agent.EmailPoller
 import java.util.concurrent.TimeUnit
 
@@ -40,16 +41,14 @@ class MainActivity : AppCompatActivity() {
         val tokenField = findViewById<EditText>(R.id.token)
         val keyField = findViewById<EditText>(R.id.aesKey)
         val imapHostField = findViewById<EditText>(R.id.imapHost)
+        val imapPortField = findViewById<EditText>(R.id.imapPort)
         val imapUserField = findViewById<EditText>(R.id.imapUser)
         val imapPasswordField = findViewById<EditText>(R.id.imapPassword)
+        val accountsList = findViewById<TextView>(R.id.accountsList)
 
         urlField.setText(config.serverUrl)
         deviceField.setText(config.deviceId)
-
-        // Prefill stored IMAP settings (read by EmailPoller from these prefs).
-        val emailPrefs = getSharedPreferences("openbasin_email", Context.MODE_PRIVATE)
-        imapHostField.setText(emailPrefs.getString("imap_host", ""))
-        imapUserField.setText(emailPrefs.getString("imap_user", ""))
+        refreshAccountsList(accountsList)
 
         findViewById<Button>(R.id.saveButton).setOnClickListener {
             config.serverUrl = urlField.text.toString()
@@ -57,24 +56,50 @@ class MainActivity : AppCompatActivity() {
             config.token = tokenField.text.toString()
             config.aesKeyBase64 = keyField.text.toString()
 
-            val emailEditor = emailPrefs.edit()
-                .putString("imap_host", imapHostField.text.toString().trim())
-                .putString("imap_user", imapUserField.text.toString().trim())
-            // Only overwrite the password when the user typed a new one, so
-            // re-saving other fields doesn't wipe a previously stored password.
-            val imapPassword = imapPasswordField.text.toString()
-            if (imapPassword.isNotEmpty()) emailEditor.putString("imap_password", imapPassword)
-            emailEditor.apply()
-
             requestSmsPermission()
             scheduleEmailPolling()
             Toast.makeText(this, "Saved. Grant notification access next.", Toast.LENGTH_LONG).show()
+        }
+
+        // Add one mailbox to the list. Repeat for as many accounts as you want.
+        findViewById<Button>(R.id.addMailboxButton).setOnClickListener {
+            val host = imapHostField.text.toString().trim()
+            val user = imapUserField.text.toString().trim()
+            val password = imapPasswordField.text.toString()
+            if (host.isEmpty() || user.isEmpty()) {
+                Toast.makeText(this, "Host and user are required", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val port = imapPortField.text.toString().trim().toIntOrNull() ?: 993
+            EmailAccount.add(this, EmailAccount(host, port, user, password))
+
+            // Clear the inputs so the next mailbox can be entered.
+            listOf(imapHostField, imapPortField, imapUserField, imapPasswordField)
+                .forEach { it.text.clear() }
+            refreshAccountsList(accountsList)
+            scheduleEmailPolling()
+            Toast.makeText(this, "Mailbox added: $user", Toast.LENGTH_SHORT).show()
+        }
+
+        findViewById<Button>(R.id.clearMailboxesButton).setOnClickListener {
+            EmailAccount.clear(this)
+            refreshAccountsList(accountsList)
+            Toast.makeText(this, "All mailboxes removed", Toast.LENGTH_SHORT).show()
         }
 
         // Notification access cannot be granted via runtime permission — it
         // requires the system settings page. Guide the user there.
         findViewById<Button>(R.id.notificationAccessButton).setOnClickListener {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+        }
+    }
+
+    private fun refreshAccountsList(view: TextView) {
+        val accounts = EmailAccount.load(this)
+        view.text = if (accounts.isEmpty()) {
+            "No mailboxes configured"
+        } else {
+            accounts.joinToString("\n") { "• ${it.label()}" }
         }
     }
 
