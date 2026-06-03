@@ -1,0 +1,36 @@
+# Secrets & local config
+config.yaml
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# Data
+*.db
+*.db-wal
+*.db-shm
+/data/
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.apk
+*.keystore
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Local agent/session state
+.claude/

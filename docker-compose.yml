@@ -1,0 +1,50 @@
+# OpenBasin — self-hosted signal aggregation.
+#
+#   cp config.example.yaml config.yaml   # then edit it
+#   docker compose up -d
+#
+# Secrets are read from the environment (an .env file beside this one works).
+# config.yaml interpolates ${VAR} from that environment at load time.
+
+services:
+  openbasin:
+    build: .
+    image: openbasin:latest
+    container_name: openbasin
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - ./pipelines:/app/pipelines:ro
+      - openbasin-data:/data
+    environment:
+      # Pass through whatever your config.yaml references. Define these in .env.
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - AZURE_OPENAI_KEY=${AZURE_OPENAI_KEY:-}
+      - PIXEL_8_TOKEN=${PIXEL_8_TOKEN:-}
+      - PIXEL_8_AES_KEY=${PIXEL_8_AES_KEY:-}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - FIREFLY_TOKEN=${FIREFLY_TOKEN:-}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8080/health').status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Optional: fully-local LLM. Uncomment and point config.yaml's llm.base_url at
+  # http://ollama:11434/v1 to keep all processing offline.
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: ollama
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ollama-data:/root/.ollama
+  #   ports:
+  #     - "11434:11434"
+
+volumes:
+  openbasin-data:
+  # ollama-data:

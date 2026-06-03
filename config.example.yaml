@@ -1,0 +1,50 @@
+# OpenBasin server configuration.
+#
+# Copy this file to `config.yaml` and edit it:
+#     cp config.example.yaml config.yaml
+#
+# Any value of the form ${VAR} is replaced with the environment variable VAR
+# at load time. Put secrets in the environment (or a .env file) — never commit
+# config.yaml with real keys.
+
+server:
+  host: 0.0.0.0
+  port: 8080
+  # Directory containing pipeline YAML files. Loaded recursively at startup
+  # and on `openbasin reload`.
+  pipelines_dir: pipelines
+
+db:
+  # SQLite file. The event store and dedup index live here.
+  path: /data/openbasin.db
+
+llm:
+  # provider: openai | anthropic | ollama | azure
+  # OpenBasin bundles no model. Any endpoint exposing an OpenAI-compatible
+  # /v1/chat/completions route works.
+  provider: openai
+  model: gpt-4o-mini
+  api_key: ${OPENAI_API_KEY}
+  base_url: https://api.openai.com/v1
+  # Optional knobs:
+  temperature: 0.0
+  timeout_seconds: 60
+
+# Registered devices. The server rejects events from any device whose token
+# is not listed here. Each device has its own AES-256 key used to decrypt the
+# transport envelope.
+#
+# Generate a device key with:
+#     python -c "import secrets,base64; print(base64.b64encode(secrets.token_bytes(32)).decode())"
+devices:
+  - device_id: pixel-8
+    token: ${PIXEL_8_TOKEN}
+    # base64-encoded 32-byte (256-bit) key, shared with the Android agent.
+    aes_key: ${PIXEL_8_AES_KEY}
+
+# Default values made available to every pipeline's action templates.
+# Pipelines reference these via ${VAR} as well.
+secrets:
+  telegram_bot_token: ${TELEGRAM_BOT_TOKEN}
+  telegram_chat_id: ${TELEGRAM_CHAT_ID}
+  firefly_token: ${FIREFLY_TOKEN}

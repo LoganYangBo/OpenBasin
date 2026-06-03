@@ -1,0 +1,14 @@
+name: bank_sms
+description: Generic bank / credit-card transaction SMS
+instructions: |
+  These messages report a single card transaction. Extract the merchant as the
+  human-readable store name (not the raw descriptor). The amount is the charged
+  value as a positive number; ignore available-balance figures. Infer a spending
+  category (Groceries, Dining, Transport, Shopping, Bills, Travel, Other) from
+  the merchant. If the message is a refund or credit, set amount negative.
+schema:
+  merchant: str
+  amount: float
+  currency: str
+  category: str
+  card_last4: str

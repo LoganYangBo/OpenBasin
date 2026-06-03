@@ -1,0 +1,12 @@
+name: dev_archive_sms
+
+# Offline smoke-test pipeline: no `extract.schema`, so the LLM is never called.
+# Every SMS is archived to a local file. Point config.yaml's
+# server.pipelines_dir at `pipelines/dev` to use ONLY this during e2e testing.
+
+trigger:
+  signal_type: sms
+
+actions:
+  - type: file
+    path: ./data/archive/sms.jsonl

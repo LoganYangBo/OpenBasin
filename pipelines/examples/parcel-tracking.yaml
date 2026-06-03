@@ -1,0 +1,23 @@
+name: parcel_tracking
+
+# Tracks courier delivery updates arriving by SMS or email and pushes a
+# Telegram notification on each status change.
+
+trigger:
+  signal_type: sms
+  filter: "tracking OR delivery OR parcel OR shipment OR out for delivery OR courier"
+
+extract:
+  prompt: parcel
+  schema:
+    carrier: str
+    tracking_number: str
+    status: str
+    eta: datetime
+
+actions:
+  - type: telegram
+    chat_id: ${TELEGRAM_CHAT_ID}
+    message: "📦 {carrier} {tracking_number}: {status} (ETA {eta})"
+  - type: file
+    path: /data/archive/parcels.jsonl

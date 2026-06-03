@@ -1,0 +1,19 @@
+name: news_digest
+
+# Captures headlines from a news app's notifications and appends them to a
+# rolling file. A scheduled job (cron + `openbasin`-adjacent script) can read
+# that file once a day and post a summary; the pipeline's job is capture.
+
+trigger:
+  signal_type: notification
+  source_app: com.google.android.apps.magazines   # adjust to your news app
+
+extract:
+  schema:
+    headline: str
+    summary: str
+    topic: str
+
+actions:
+  - type: file
+    path: /data/archive/news.jsonl

@@ -1,0 +1,26 @@
+name: subscription_alert
+
+# Detects subscription renewal / billing emails and forwards a heads-up to
+# Telegram. (Send-ahead reminders — e.g. "3 days before" — are a scheduling
+# concern handled by a downstream consumer of the webhook below.)
+
+trigger:
+  signal_type: email
+  filter: "subscription OR renewal OR renews OR your plan OR auto-renew OR will be charged"
+
+extract:
+  schema:
+    service: str
+    amount: float
+    currency: str
+    renewal_date: datetime
+    cancel_url: str
+
+actions:
+  - type: telegram
+    chat_id: ${TELEGRAM_CHAT_ID}
+    message: "🔁 {service} renews {renewal_date} for {currency}{amount}"
+  - type: webhook
+    url: ${REMINDER_WEBHOOK_URL}
+    headers:
+      Authorization: "Bearer ${REMINDER_TOKEN}"

@@ -1,0 +1,12 @@
+name: parcel
+description: Courier / parcel delivery status from SMS or email
+instructions: |
+  These messages are shipping updates from a courier. Extract the tracking
+  number exactly as shown. Normalize status to one of: label_created, in_transit,
+  out_for_delivery, delivered, exception. Carrier is the shipping company name.
+  eta is the delivery date if stated, else null.
+schema:
+  carrier: str
+  tracking_number: str
+  status: str
+  eta: datetime

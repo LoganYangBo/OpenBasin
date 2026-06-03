@@ -1,0 +1,26 @@
+name: credit_card_bookkeeping
+
+trigger:
+  signal_type: sms
+  filter: "bank OR charged OR payment OR transaction"
+
+extract:
+  prompt: bank_sms          # reuse the tuned bank-SMS extractor prompt
+  schema:
+    merchant: str
+    amount: float
+    currency: str
+    category: str           # inferred by LLM
+
+conditions:
+  - "amount > 0"
+  - "merchant != 'Internal Transfer'"
+
+actions:
+  - type: firefly
+    url: http://firefly:8080
+    token: ${FIREFLY_TOKEN}
+    account: "Chase Sapphire"
+  - type: telegram
+    chat_id: ${TELEGRAM_CHAT_ID}
+    message: "💳 {merchant} {currency}{amount} → {category}"

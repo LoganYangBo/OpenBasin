@@ -1,0 +1,28 @@
+name: invoice_archive
+
+# Detects invoice / receipt emails and archives the structured record to a
+# Google Sheet plus a local JSONL backup you control.
+
+trigger:
+  signal_type: email
+  filter: "invoice OR receipt OR billed OR statement"
+
+extract:
+  schema:
+    vendor: str
+    amount: float
+    currency: str
+    invoice_date: datetime
+    invoice_number: str
+
+conditions:
+  - "amount > 0"
+
+actions:
+  - type: sheet
+    spreadsheet_id: ${SHEET_ID}
+    token: ${GOOGLE_TOKEN}
+    range: "Invoices!A:Z"
+    columns: ["invoice_date", "vendor", "amount", "currency", "invoice_number"]
+  - type: file
+    path: /data/archive/invoices.jsonl
