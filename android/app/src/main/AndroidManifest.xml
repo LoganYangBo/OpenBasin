@@ -14,6 +14,7 @@
     <application
         android:allowBackup="false"
         android:label="OpenBasin"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:supportsRtl="true"
         android:theme="@style/Theme.Material3.DayNight">
 

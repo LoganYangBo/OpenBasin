@@ -1,6 +1,7 @@
 package com.openbasin
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -38,15 +39,33 @@ class MainActivity : AppCompatActivity() {
         val deviceField = findViewById<EditText>(R.id.deviceId)
         val tokenField = findViewById<EditText>(R.id.token)
         val keyField = findViewById<EditText>(R.id.aesKey)
+        val imapHostField = findViewById<EditText>(R.id.imapHost)
+        val imapUserField = findViewById<EditText>(R.id.imapUser)
+        val imapPasswordField = findViewById<EditText>(R.id.imapPassword)
 
         urlField.setText(config.serverUrl)
         deviceField.setText(config.deviceId)
+
+        // Prefill stored IMAP settings (read by EmailPoller from these prefs).
+        val emailPrefs = getSharedPreferences("openbasin_email", Context.MODE_PRIVATE)
+        imapHostField.setText(emailPrefs.getString("imap_host", ""))
+        imapUserField.setText(emailPrefs.getString("imap_user", ""))
 
         findViewById<Button>(R.id.saveButton).setOnClickListener {
             config.serverUrl = urlField.text.toString()
             config.deviceId = deviceField.text.toString()
             config.token = tokenField.text.toString()
             config.aesKeyBase64 = keyField.text.toString()
+
+            val emailEditor = emailPrefs.edit()
+                .putString("imap_host", imapHostField.text.toString().trim())
+                .putString("imap_user", imapUserField.text.toString().trim())
+            // Only overwrite the password when the user typed a new one, so
+            // re-saving other fields doesn't wipe a previously stored password.
+            val imapPassword = imapPasswordField.text.toString()
+            if (imapPassword.isNotEmpty()) emailEditor.putString("imap_password", imapPassword)
+            emailEditor.apply()
+
             requestSmsPermission()
             scheduleEmailPolling()
             Toast.makeText(this, "Saved. Grant notification access next.", Toast.LENGTH_LONG).show()
